@@ -23,7 +23,7 @@ typedef std::vector<scalar_type> plain_vector;
 
 enum { DIRICHLET_BOUNDARY_NUM = 0, NEUMANN_BOUNDARY_NUM = 1, INNER_FACES = 2};
 enum { DIRICHLET_WITH_MULTIPLIERS = 0, DIRICHLET_WITH_PENALIZATION = 1};
-enum { BOTTOM = 2, TOP = 1 };
+enum { BOTTOM = 2, TOP = 1 , LEFT = 3, RIGHT =4};
 getfem::base_vector assembly(getfem::base_vector U,
 getfem::base_vector P,
 getfem::base_vector U_old,
@@ -48,31 +48,7 @@ int main(int argc, char *argv[]) {
 	GMM_SET_EXCEPTION_DEBUG; // Exceptions make a memory fault, to debug.
 	FE_ENABLE_EXCEPT;        // Enable floating point exception for Nan.
 
-	//   try {    
-	//     laplacian_problem p;
-	//     p.PARAM.read_command_line(argc, argv);
-	//     p.init();
-	//     p.mesh.write_to_file(p.datafilename + ".mesh");
-	//     p.assembly();
-	//     if (!p.solve()) GMM_ASSERT1(false, "Solve procedure has failed");
-	//     p.compute_error();
-	//      if (p.PARAM.int_value("VTK_EXPORT") && getfem::MPI_IS_MASTER()) {
-	//       cout << "export to " << p.datafilename + ".vtk" << "..\n";
-	//       getfem::vtk_export exp(p.datafilename + ".vtk",
-	// 			     p.PARAM.int_value("VTK_EXPORT")==1);
-	//       getfem::vtk_export exp1(p.datafilename + ".1.vtk",
-	// 			     p.PARAM.int_value("VTK_EXPORT")==1);
-	//       getfem::vtk_export exp2(p.datafilename + ".2.vtk",
-	// 			     p.PARAM.int_value("VTK_EXPORT")==1);
-	//       exp.exporting(p.mf_u);     exp.write_point_data(p.mf_u, p.U, "u");
-	//       exp1.exporting(p.mf_u);     exp1.write_point_data(p.mf_u, p.U, "u");
-	//       exp2.exporting(p.mf_u);     exp2.write_point_data(p.mf_u, p.U, "u");
-	//       cout << "export done, you can view the data file with (for example)\n"
-	// 	"mayavi2 -d " << p.datafilename << ".vtk -f ExtractVectorNorm -f "
-	// 	"WarpVector -m Surface -m Outline\n";
-	//     }
-	//   }
-	// GMM_STANDARD_CATCH_ERROR;
+
 	std::cout<< "here we try a generic assembly"<<std::endl; 
 	bool complex_version=false;
 	//////////////MESH
@@ -141,6 +117,10 @@ int main(int argc, char *argv[]) {
 			mesh.region(TOP).add(i.cv(), i.f());
 		} else if (gmm::abs(un[N-1] + 1.0) < 1.0E-7) {
 			mesh.region(BOTTOM).add(i.cv(), i.f());
+		} else if (gmm::abs(un[N-2] + 1.0) < 1.0E-7) {
+			mesh.region(LEFT).add(i.cv(), i.f());
+		} else if (gmm::abs(un[N-2] - 1.0) < 1.0E-7) {
+			mesh.region(RIGHT).add(i.cv(), i.f());
 		}
 else {
 			mesh.region(DIRICHLET_BOUNDARY_NUM).add(i.cv(), i.f());
