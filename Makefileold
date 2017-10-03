@@ -1,0 +1,17 @@
+INCLUDES = -I ${GET_FEM_DIR}/include
+INCLUDES += -I ${GET_FEM_DIR}/include
+CC =g++
+LFLAGS = -L${QHULL_DIR}/lib
+LFLAGS += -L${LAPACK_DIR}/lib64
+
+LIBS =  ${GET_FEM_DIR}/lib/libgetfem.a -lm  -rdynamic -lqhull -lblas -llapack  
+CFLAGS =-DGMM_USES_BLAS -O3 -Wall -W -fmessage-length=0 -ftemplate-depth-100 -std=c++11 -fPIC -pedantic -Wshadow -Wno-unknown-pragmas -Wno-variadic-macros -Wno-unused-but-set-variable -Wpointer-arith -Wcast-qual -Wwrite-strings -Wconversion -Wredundant-decls -Wno-long-long
+OBJS = prova1.o
+TARGET = prova1
+${TARGET}: ${OBJS}
+	   ${CC} ${CFLAGS} ${INCLUDES} -o $@ ${OBJS} ${LFLAGS} ${LIBS}
+.cc.o:
+	   ${CC} ${CFLAGS} ${INCLUDES} -c $<
+
+#g++ -DHAVE_CONFIG_H -I. -I..  -I../src -I../src -DGMM_USES_BLAS  -I/u/archive/agip/cerroni/software/getfem/getfem/include  -O3 -Wall -W -fmessage-length=0 -ftemplate-depth-100 -std=c++11 -fPIC -pedantic -Wshadow -Wno-unknown-pragmas -Wno-variadic-macros -Wno-unused-but-set-variable -Wpointer-arith -Wcast-qual -Wwrite-strings -Wconversion -Wredundant-decls -Wno-long-long -c -o elastostatic.o elastostatic.cci
+#/u/archive/agip/cerroni/software/getfem/getfem/lib/libgetfem.a -lm  -rdynamic 
