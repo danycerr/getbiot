@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 
 	std::string datafilename="biot.";
 
-	for(int istep = 1; istep< 20 ; istep++){
+	for(int istep = 1; istep< 25 ; istep++){
 		TU=assembly(U, P, U_old, P_old,mim,  mf_u, mf_p);
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);
@@ -183,21 +183,22 @@ getfem::base_vector assembly(
 	gmm::copy(U,U_old);gmm::copy(P,P_old);	
 	gmm::clean(P_old, 1E-10);gmm::clean(U_old, 1E-10);
 	gmm::clean(P, 1E-10);gmm::clean(U, 1E-10);
-	double mu=1.e+9;
-	double dt=1.e-1;
+	double mu=1.5e+9;
+	double dt=3.6e+2;
 	getfem::base_vector invdt(1); invdt[0] = 1/dt;
 	workspace.add_fixed_size_constant("invdt", invdt);
 //---------------------------------------------------------
 	getfem::base_vector vmu(1); vmu[0] = mu;
 	workspace.add_fixed_size_constant("mu", vmu);
 //---------------------------------------------------------
-	getfem::base_vector alpha(1); alpha[0] = 0.7;
-	workspace.add_fixed_size_constant("alpha", alpha);
-//---------------------------------------------------------
-	getfem::base_vector lambda(1); lambda[0] = 0.e+2;
+	double poisson =0.18;
+	getfem::base_vector lambda(1); lambda[0] = (2 * mu * poisson)/(1 - 2 * poisson) ;
 	workspace.add_fixed_size_constant("lambda", lambda);
 //---------------------------------------------------------
-	getfem::base_vector permeability(1); permeability[0] = 1.e-7;
+	getfem::base_vector alpha(1); alpha[0] = 0.5;
+	workspace.add_fixed_size_constant("alpha", alpha);
+//---------------------------------------------------------
+	getfem::base_vector permeability(1); permeability[0] = 1.e-0;
 	workspace.add_fixed_size_constant("permeability", permeability);
 //---------------------------------------------------------
 	getfem::base_vector force(1); force[0] = 1.e+6;
@@ -227,9 +228,10 @@ getfem::base_vector assembly(
 	getfem::base_vector penalty(1); penalty[0] = 1.e+4;
 	workspace.add_fixed_size_constant("penalty", penalty);
 	//Matrix term
-	workspace.add_expression("0*penalty*u.Test_u" "+ penalty*p*Test_p", mim, TOP); // 1 is the region
+	workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*p*Test_p", mim, TOP); // 1 is the region
 	// workspace.add_expression("penalty*u.Test_u" "+ 0*penalty*p*Test_p", mim, BOTTOM); // 1 is the region
-	workspace.add_expression("0*penalty*u.Test_u" "+ penalty*p*Test_p", mim, BOTTOM); // 1 is the region	
+	workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*p*Test_p", mim, BOTTOM); // 1 is the region	
+	workspace.add_expression("penalty*p*Test_p", mim, LEFT); workspace.add_expression("penalty*p*Test_p", mim, RIGHT);// 1 is the region	
 	workspace.assembly(2);
 	workspace.clear_expressions();
 	//rhs term
@@ -237,6 +239,7 @@ getfem::base_vector assembly(
 	workspace.add_expression("[0,-2*force].Test_u" "+ penalty*0*p*Test_p", mim, TOP); //neumann disp
 	// workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*0*p*Test_p", mim, BOTTOM); // 1 is the region
 	workspace.add_expression("[0,+2*force].Test_u" "+ penalty*0*p*Test_p", mim, BOTTOM); //neumann disp
+	workspace.add_expression("0*penalty*p*Test_p", mim, LEFT); workspace.add_expression("0*penalty*p*Test_p", mim, RIGHT);
 	workspace.assembly(1);
 	workspace.clear_expressions();
 	// ==============================================================
