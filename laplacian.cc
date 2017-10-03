@@ -23,7 +23,7 @@ typedef std::vector<scalar_type> plain_vector;
 
 enum { DIRICHLET_BOUNDARY_NUM = 0, NEUMANN_BOUNDARY_NUM = 1, INNER_FACES = 2};
 enum { DIRICHLET_WITH_MULTIPLIERS = 0, DIRICHLET_WITH_PENALIZATION = 1};
-enum { BOTTOM = 2, TOP = 1};
+enum { BOTTOM = 2, TOP = 1 };
 getfem::base_vector assembly(getfem::base_vector U,
 getfem::base_vector P,
 getfem::base_vector U_old,
