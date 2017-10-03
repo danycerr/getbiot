@@ -186,19 +186,27 @@ getfem::base_vector assembly(
 	double mu=1.e+9;
 	double dt=1.e-1;
 	getfem::base_vector invdt(1); invdt[0] = 1/dt;
+	workspace.add_fixed_size_constant("invdt", invdt);
+//---------------------------------------------------------
 	getfem::base_vector vmu(1); vmu[0] = mu;
+	workspace.add_fixed_size_constant("mu", vmu);
+//---------------------------------------------------------
 	getfem::base_vector alpha(1); alpha[0] = 0.7;
+	workspace.add_fixed_size_constant("alpha", alpha);
+//---------------------------------------------------------
 	getfem::base_vector lambda(1); lambda[0] = 0.e+2;
+	workspace.add_fixed_size_constant("lambda", lambda);
+//---------------------------------------------------------
 	getfem::base_vector permeability(1); permeability[0] = 1.e-7;
 	workspace.add_fixed_size_constant("permeability", permeability);
-	workspace.add_fixed_size_constant("lambda", lambda);
+//---------------------------------------------------------
+	getfem::base_vector force(1); force[0] = 1.e+6;
+	workspace.add_fixed_size_constant("force", force);
+//---------------------------------------------------------
 	workspace.add_fem_variable("u", mf_u, gmm::sub_interval(0, nbdofu), U);
 	workspace.add_fem_variable("p", mf_p, gmm::sub_interval(nbdofu, nbdofp), P);
 	workspace.add_fem_variable("u_old", mf_u, gmm::sub_interval(0, nbdofu), U_old);
 	workspace.add_fem_variable("p_old", mf_p, gmm::sub_interval(nbdofu,nbdofp), P_old);
-	workspace.add_fixed_size_constant("invdt", invdt);
-	workspace.add_fixed_size_constant("mu", vmu);
-	workspace.add_fixed_size_constant("alpha", alpha);
 	workspace.add_expression("2*mu*Sym(Grad_u):Grad_Test_u"
 			"+ alpha*p*Trace(Grad_Test_u) + invdt*alpha*Test_p*Trace(Sym(Grad_u))"
 			"+invdt*p.Test_p + permeability*Grad_p.Grad_Test_p + lambda*Div_u*Div_Test_u"
@@ -226,9 +234,9 @@ getfem::base_vector assembly(
 	workspace.clear_expressions();
 	//rhs term
 	// workspace.add_expression("0*penalty*u.Test_u" "+ penalty*0*p*Test_p", mim, TOP); // 1 is the region
-	workspace.add_expression("[0,-2].Test_u" "+ penalty*0*p*Test_p", mim, TOP); //neumann disp
+	workspace.add_expression("[0,-2*force].Test_u" "+ penalty*0*p*Test_p", mim, TOP); //neumann disp
 	// workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*0*p*Test_p", mim, BOTTOM); // 1 is the region
-	workspace.add_expression("[0,+2].Test_u" "+ penalty*0*p*Test_p", mim, BOTTOM); //neumann disp
+	workspace.add_expression("[0,+2*force].Test_u" "+ penalty*0*p*Test_p", mim, BOTTOM); //neumann disp
 	workspace.assembly(1);
 	workspace.clear_expressions();
 	// ==============================================================

@@ -189,8 +189,10 @@ getfem::base_vector assembly(
 	getfem::base_vector vmu(1); vmu[0] = mu;
 	getfem::base_vector alpha(1); alpha[0] = 0.7;
 	getfem::base_vector lambda(1); lambda[0] = 0.e+2;
-	getfem::base_vector permeability(1); permeability[0] = 0.e+2;
+	getfem::base_vector permeability(1); permeability[0] = 1.e-7;
 	workspace.add_fixed_size_constant("permeability", permeability);
+	getfem::base_vector force(1); force[0] = 1.e+6;
+	workspace.add_fixed_size_constant("force", force);
 	workspace.add_fixed_size_constant("lambda", lambda);
 	workspace.add_fem_variable("u", mf_u, gmm::sub_interval(0, nbdofu), U);
 	workspace.add_fem_variable("p", mf_p, gmm::sub_interval(nbdofu, nbdofp), P);
