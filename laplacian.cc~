@@ -3,6 +3,7 @@
 #include "getfem/getfem_model_solvers.h"
 #include "getfem/getfem_export.h"
 #include "getfem/getfem_regular_meshes.h"
+#include "getfem/getfem_mesher.h"
 #include "gmm/gmm.h"
 #include "getfem/getfem_generic_assembly.h"
 /**************************************************************************/
@@ -63,7 +64,29 @@ int main(int argc, char *argv[]) {
 	int NX=10;
 	std::fill(nsubdiv.begin(),nsubdiv.end(),NX);
 	getfem::mesh mesh;        /* the mesh */
-	getfem::regular_unit_mesh(mesh, nsubdiv, pgt, 0);
+
+// getfem::pmesher_signed_distance
+// mo = getfem::new_mesher_rectangle(base_node(0., 0.), base_node(2., 2.));
+
+getfem::regular_unit_mesh(mesh, nsubdiv, pgt, 0);
+
+  bgeot::base_matrix M(N,N);
+  for (size_type i=0; i < N; ++i) {
+    static const char *t[] = {"LX","LY","LZ"};
+    M(i,i) = (i<3) ? 2.0 : 1.0;
+  }
+  // if (N>1) { M(0,1) = PARAM.real_value("INCLINE") * PARAM.real_value("LY"); }
+
+  /* scale the unit mesh to [LX,LY,..] and incline it */
+  mesh.transformation(M);
+
+
+
+
+// std::vector<getfem::base_node> fixed;
+// double h = 0.1;        // Approximate mesh size
+// getfem::build_mesh(mesh, mo, h, fixed, 2, -2);
+
 	//  bgeot::base_matrix M(N,N);
 	//  for (size_type i=0; i < N; ++i) {
 	//    M(i,i) = 1.0;
@@ -144,13 +167,13 @@ int main(int argc, char *argv[]) {
 
 
 	std::string datafilename="biot.";
-
-	for(int istep = 1; istep< 25 ; istep++){
+        int printstep=10; 
+	for(int istep = 1; istep< 200 ; istep++){
 		TU=assembly(U, P, U_old, P_old,mim,  mf_u, mf_p);
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);
 
-		{
+		if (istep%printstep==0){
 			getfem::vtk_export exp1(datafilename + std::to_string(istep) + ".vtk",   1);
 			//       exp.exporting(mf_u);     exp.write_point_data(mf_u, U, "u");
 			exp1.exporting(mf_u);  	exp1.write_point_data(mf_u, U, "u");  exp1.write_point_data(mf_p, P, "p");
@@ -183,22 +206,22 @@ getfem::base_vector assembly(
 	gmm::copy(U,U_old);gmm::copy(P,P_old);	
 	gmm::clean(P_old, 1E-10);gmm::clean(U_old, 1E-10);
 	gmm::clean(P, 1E-10);gmm::clean(U, 1E-10);
-	double mu=1.5e+9;
-	double dt=3.6e+2;
+	double mu=1.5e+6;
+	double dt=1.e+0;
 	getfem::base_vector invdt(1); invdt[0] = 1/dt;
 	workspace.add_fixed_size_constant("invdt", invdt);
 //---------------------------------------------------------
 	getfem::base_vector vmu(1); vmu[0] = mu;
 	workspace.add_fixed_size_constant("mu", vmu);
 //---------------------------------------------------------
-	double poisson =0.18;
+	double poisson =0.2;
 	getfem::base_vector lambda(1); lambda[0] = (2 * mu * poisson)/(1 - 2 * poisson) ;
 	workspace.add_fixed_size_constant("lambda", lambda);
 //---------------------------------------------------------
 	getfem::base_vector alpha(1); alpha[0] = 0.5;
 	workspace.add_fixed_size_constant("alpha", alpha);
 //---------------------------------------------------------
-	getfem::base_vector permeability(1); permeability[0] = 1.e-0;
+	getfem::base_vector permeability(1); permeability[0] = 1.e-3;
 	workspace.add_fixed_size_constant("permeability", permeability);
 //---------------------------------------------------------
 	getfem::base_vector force(1); force[0] = 1.e+6;
@@ -218,27 +241,27 @@ getfem::base_vector assembly(
 	workspace.clear_expressions();
 
 	//======= RHS =====================
-	workspace.add_expression("[0,-0].Test_u +[+0.0].Test_p + invdt*p_old.Test_p - invdt*alpha*Test_p*Trace(Sym(Grad_u_old))", mim);
+	workspace.add_expression("[0,-0].Test_u +[+0.0].Test_p + invdt*p_old.Test_p + invdt*alpha*Test_p*Trace(Sym(Grad_u_old))", mim);
 	getfem::base_vector L(nbdofu+nbdofp);
 	workspace.set_assembled_vector(L);
 	workspace.assembly(1);
 	workspace.clear_expressions();
 
 	//Boudanry conditions
-	getfem::base_vector penalty(1); penalty[0] = 1.e+4;
+	getfem::base_vector penalty(1); penalty[0] = 1.e+8;
 	workspace.add_fixed_size_constant("penalty", penalty);
 	//Matrix term
-	workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*p*Test_p", mim, TOP); // 1 is the region
+	//workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*p*Test_p", mim, TOP); // 1 is the region
 	// workspace.add_expression("penalty*u.Test_u" "+ 0*penalty*p*Test_p", mim, BOTTOM); // 1 is the region
-	workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*p*Test_p", mim, BOTTOM); // 1 is the region	
+	//workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*p*Test_p", mim, BOTTOM); // 1 is the region	
 	workspace.add_expression("penalty*p*Test_p", mim, LEFT); workspace.add_expression("penalty*p*Test_p", mim, RIGHT);// 1 is the region	
 	workspace.assembly(2);
 	workspace.clear_expressions();
 	//rhs term
 	// workspace.add_expression("0*penalty*u.Test_u" "+ penalty*0*p*Test_p", mim, TOP); // 1 is the region
-	workspace.add_expression("[0,-2*force].Test_u" "+ penalty*0*p*Test_p", mim, TOP); //neumann disp
+	workspace.add_expression("[0,-2*force].Test_u" , mim, TOP); //neumann disp
 	// workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*0*p*Test_p", mim, BOTTOM); // 1 is the region
-	workspace.add_expression("[0,+2*force].Test_u" "+ penalty*0*p*Test_p", mim, BOTTOM); //neumann disp
+	workspace.add_expression("[0,+2*force].Test_u" , mim, BOTTOM); //neumann disp
 	workspace.add_expression("0*penalty*p*Test_p", mim, LEFT); workspace.add_expression("0*penalty*p*Test_p", mim, RIGHT);
 	workspace.assembly(1);
 	workspace.clear_expressions();
@@ -251,8 +274,11 @@ getfem::base_vector assembly(
 	gmm::identity_matrix PM; // no precond
 	gmm::iteration iter(1.e-12);  // iteration object with the max residu
 	iter.set_noisy(1);               // output of iterations (2: sub-iteration)
-	iter.set_maxiter(10000); // maximum number of iterations
-	gmm::gmres(K, TU, L, PM, restart, iter);
+	iter.set_maxiter(2000); // maximum number of iterations
+	//gmm::gmres(K, TU, L, PM, restart, iter);
+
+	gmm::identity_matrix PS;  // optional scalar product
+	gmm::cg(K, TU, L, PS, PM, iter);
 
 
 	gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
