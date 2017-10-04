@@ -6,6 +6,8 @@
 #include "getfem/getfem_mesher.h"
 #include "gmm/gmm.h"
 #include "getfem/getfem_generic_assembly.h"
+
+#include "AMG_Interface.h"
 /**************************************************************************/
 /*  main program.                                                         */
 /**************************************************************************/
@@ -168,13 +170,15 @@ getfem::regular_unit_mesh(mesh, nsubdiv, pgt, 0);
 
 	std::string datafilename="biot.";
         int printstep=10; 
-	for(int istep = 1; istep< 1000 ; istep++){
+	for(int istep = 1; istep< 2 ; istep++){
 		TU=assembly(U, P, U_old, P_old,mim,  mf_u, mf_p);
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);
 
 		if (istep%printstep==0){
 			getfem::vtk_export exp1(datafilename + std::to_string(istep) + ".vtk",   1);
+
+		// exp1.set_header("TIME 1 1 double \n" + std::to_string(istep*0.1));
 			//       exp.exporting(mf_u);     exp.write_point_data(mf_u, U, "u");
 			exp1.exporting(mf_u);  	exp1.write_point_data(mf_u, U, "u");  exp1.write_point_data(mf_p, P, "p");
 		}
@@ -277,9 +281,14 @@ getfem::base_vector assembly(
 	iter.set_maxiter(2000); // maximum number of iterations
 	//gmm::gmres(K, TU, L, PM, restart, iter);
 
-	gmm::identity_matrix PS;  // optional scalar product
-	gmm::cg(K, TU, L, PS, PM, iter);
+	
 
+
+
+//solution with CG
+//	gmm::identity_matrix PS;  // optional scalar product
+//	gmm::cg(K, TU, L, PS, PM, iter);
+//end solution with CG
 
 	gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 	gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);	
