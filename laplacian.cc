@@ -170,7 +170,7 @@ getfem::regular_unit_mesh(mesh, nsubdiv, pgt, 0);
 
 	std::string datafilename="biot.";
         int printstep=10; 
-	for(int istep = 1; istep< 2 ; istep++){
+	for(int istep = 1; istep< 30 ; istep++){
 		TU=assembly(U, P, U_old, P_old,mim,  mf_u, mf_p);
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);
@@ -289,6 +289,29 @@ getfem::base_vector assembly(
 //	gmm::identity_matrix PS;  // optional scalar product
 //	gmm::cg(K, TU, L, PS, PM, iter);
 //end solution with CG
+
+
+//////////////////////////////////AMG INTERFACE
+std::cout<<"converting A"<<std::endl;
+gmm::csr_matrix<scalar_type> A_csr;
+gmm::clean(K, 1E-12);
+gmm::copy(K, A_csr);
+std::cout<<"converting X"<<std::endl;
+std::vector<scalar_type> X,  B;
+gmm::resize(X,nbdofu+nbdofp); gmm::clean(X, 1E-12);
+gmm::copy(TU,X);
+std::cout<<"converting B"<<std::endl;
+gmm::resize(B,nbdofu+nbdofp);gmm::clean(B, 1E-12);
+gmm::copy(L,B);
+
+
+
+AMG amg(A_csr, X , B);
+gmm::copy(amg.getsol(),TU);
+////////////////////////////////////////////
+
+
+
 
 	gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 	gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);	
