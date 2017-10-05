@@ -1,5 +1,5 @@
 #include "AMG_Interface.h" 
-
+#include <memory>
 AMG::AMG(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B)
 {
 	std::cout<<"Start building the matrix"<<std::endl; 

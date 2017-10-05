@@ -18,11 +18,11 @@ using bgeot::scalar_type;
 
 class AMG {
   private:
-std::vector<scalar_type> sol_vec;
+std::vector<scalar_type> sol_vec;    
 
 
   public:
-  AMG(getfem::model_real_sparse_matrix A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B );
+  AMG(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B );
   std::vector<scalar_type> getsol(){return sol_vec;}
 };
 
