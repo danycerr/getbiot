@@ -22,16 +22,15 @@ indent_mode=2
 name=biotgeany
 base_path=/u/cerroni/Desktop/fat_home/software/mygetfem/getbiot/
 description=
-file_patterns=
+file_patterns=/u/archive/agip/cerroni/software/getfem5/include/;
 
 [long line marker]
 long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=1
-FILE_NAME_0=0;LaTeX;0;EUTF-8;1;1;0;%2Fu%2Fcerroni%2FDesktop%2Ffat_home%2Fdocument%2Fwriting%2Fcv_bib%2FEuropassCV%2Ftitoli_studio%2Ftitoli.tex;0;4
-FILE_NAME_1=1359;C++;0;EUTF-8;1;1;0;%2Fu%2Farchive%2Fagip%2Fcerroni%2Fsoftware%2Fmygetfem%2Fgetbiot%2Flaplacian.cc;0;4
+current_page=0
+FILE_NAME_0=219;C++;0;EUTF-8;1;1;0;%2Fu%2Farchive%2Fagip%2Fcerroni%2Fsoftware%2Fmygetfem%2Fgetbiot%2Flaplacian.cc;0;4
 
 [VTE]
 last_dir=/u/cerroni
