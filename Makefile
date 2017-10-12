@@ -7,9 +7,11 @@ all: example
 
 example: $(OBJS)
 	   $(CXX) -o $@ $(OBJS) $(LFLAGS) $(LIBS)
-%.o:%.cc %h
+%.o:%.cc
 	   $(CXX) ${CXXFLAGS} ${INCLUDES} -c -o $@ $<
 
+%.cc:%.h
+	@touch $@
 clean:
 	$(RM) $(OBJS)
 

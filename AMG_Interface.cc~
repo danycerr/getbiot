@@ -59,7 +59,7 @@ AMG::AMG(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::ve
 
 
 APPL_INT npnt,nsys,matrix;
-				matrix=22; nsys=1;npnt=0;
+				matrix=22; nsys=3;npnt=0;
 				APPL_INT ndiu      = 1;        // dimension of (dummy) vector iu
 				APPL_INT ncyc;
 
@@ -76,7 +76,8 @@ APPL_INT npnt,nsys,matrix;
 			 for(int iiu=0;iiu<nnu;iiu++){
 				//only working for nsys = 2 check it out for larger systems				 
 				if(iiu < 882){
-				iu[iiu]=((iiu%2==0)? 1:2);
+				 iu[iiu]=((iiu< 441)? 1:2);
+				//iu[iiu]=1;
 }
 				else iu[iiu]=3;
 				}//end for iiu
@@ -117,7 +118,7 @@ APPL_INT npnt,nsys,matrix;
 
 
 
-//#ifdef DIRECT_SOLVER	
+#ifdef DIRECT_SOLVER	
 	
 			int levelx;
 			SAMG_GET_LEVELX(&levelx); // retreive levelx=number of maximum coarsening levels 
@@ -137,7 +138,7 @@ APPL_INT npnt,nsys,matrix;
 			
 			ncyc      = 11050;    // V-cycle as pre-conditioner for CG; at most 50 iterations
 
-// #endif //direct_solver
+ #endif //direct_solver
 
 
 
@@ -156,7 +157,9 @@ APPL_INT npnt,nsys,matrix;
 			ncyc      = 11050;    // V-cycle as pre-conditioner for CG; at most 50 iterations	
 			
 #endif //amg_accelerated
-
+int  nrc=4;int  nrc_emergency=4;int nptmax=5000;int clsolver_finest=1;
+			  SAMG_SET_NRC(&nrc);// change  nrc=solver for coarser levels page 67 user guide
+			SAMG_SET_NRC_EMERGENCY(&nrc_emergency);
 ncyc      = 11050;   
 
 				APPL_INT ndip      = 1;        // dimension of (dummy) vector ip

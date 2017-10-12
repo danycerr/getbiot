@@ -46,6 +46,12 @@ base_small_vector sol_grad(const base_node &x)
 // vectorial velocity field
 base_small_vector vel_vec(const base_node &x)
 { return base_small_vector(1*x[1], 0.2*(x[0])); }
+/////////////////////////////////////////////////////
+//////////////////////////////////////////////////
+////////////////// MAIN //////////////////////////
+/////////////////////////////////////////////////////
+//////////////////////////////////////////////////
+
 int main(int argc, char *argv[]) {
 
 	GMM_SET_EXCEPTION_DEBUG; // Exceptions make a memory fault, to debug.
@@ -286,29 +292,29 @@ getfem::base_vector assembly(
 
 
 //solution with CG
-//	gmm::identity_matrix PS;  // optional scalar product
-//	gmm::cg(K, TU, L, PS, PM, iter);
+	gmm::identity_matrix PS;  // optional scalar product
+	gmm::cg(K, TU, L, PS, PM, iter);
 //end solution with CG
 
 
-//////////////////////////////////AMG INTERFACE
-std::cout<<"converting A"<<std::endl;
-gmm::csr_matrix<scalar_type> A_csr;
-gmm::clean(K, 1E-12);
-gmm::copy(K, A_csr);
-std::cout<<"converting X"<<std::endl;
-std::vector<scalar_type> X,  B;
-gmm::resize(X,nbdofu+nbdofp); gmm::clean(X, 1E-12);
-gmm::copy(TU,X);
-std::cout<<"converting B"<<std::endl;
-gmm::resize(B,nbdofu+nbdofp);gmm::clean(B, 1E-12);
-gmm::copy(L,B);
+////////////////////////////////////AMG INTERFACE
+//std::cout<<"converting A"<<std::endl;
+//gmm::csr_matrix<scalar_type> A_csr;
+//gmm::clean(K, 1E-12);
+//gmm::copy(K, A_csr);
+//std::cout<<"converting X"<<std::endl;
+//std::vector<scalar_type> X,  B;
+//gmm::resize(X,nbdofu+nbdofp); gmm::clean(X, 1E-12);
+//gmm::copy(TU,X);
+//std::cout<<"converting B"<<std::endl;
+//gmm::resize(B,nbdofu+nbdofp);gmm::clean(B, 1E-12);
+//gmm::copy(L,B);
 
 
 
-AMG amg(A_csr, X , B);
-gmm::copy(amg.getsol(),TU);
-////////////////////////////////////////////
+//AMG amg(A_csr, X , B);
+//gmm::copy(amg.getsol(),TU);
+//////////////////////////////////////////////
 
 
 

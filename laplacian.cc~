@@ -252,7 +252,7 @@ getfem::base_vector assembly(
 	workspace.clear_expressions();
 
 	//Boudanry conditions
-	getfem::base_vector penalty(1); penalty[0] = 1.e+8;
+	getfem::base_vector penalty(1); penalty[0] = 1.e+12;
 	workspace.add_fixed_size_constant("penalty", penalty);
 	//Matrix term
 	//workspace.add_expression("0*penalty*u.Test_u" "+ 0*penalty*p*Test_p", mim, TOP); // 1 is the region
@@ -294,7 +294,7 @@ getfem::base_vector assembly(
 //////////////////////////////////AMG INTERFACE
 std::cout<<"converting A"<<std::endl;
 gmm::csr_matrix<scalar_type> A_csr;
-//gmm::clean(K, 1E-12);
+gmm::clean(K, 1E-12);
 gmm::copy(K, A_csr);
 std::cout<<"converting X"<<std::endl;
 std::vector<scalar_type> X,  B;
