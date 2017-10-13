@@ -59,7 +59,7 @@ AMG::AMG(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::ve
 
 
 APPL_INT npnt,nsys,matrix;
-				matrix=22; nsys=1;npnt=0;
+				matrix=22; nsys=3;npnt=0;
 				APPL_INT ndiu      = 1;        // dimension of (dummy) vector iu
 				APPL_INT ncyc;
 
@@ -76,7 +76,8 @@ APPL_INT npnt,nsys,matrix;
 			 for(int iiu=0;iiu<nnu;iiu++){
 				//only working for nsys = 2 check it out for larger systems				 
 				if(iiu < 882){
-				iu[iiu]=((iiu%2==0)? 1:2);
+				 iu[iiu]=((iiu< 441)? 1:2);
+				//iu[iiu]=1;
 }
 				else iu[iiu]=3;
 				}//end for iiu

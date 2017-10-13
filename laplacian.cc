@@ -6,7 +6,7 @@
 #include "getfem/getfem_mesher.h"
 #include "gmm/gmm.h"
 #include "getfem/getfem_generic_assembly.h"
-
+#include "getfem/getfem_mesh_fem.h"
 #include "AMG_Interface.h"
 /**************************************************************************/
 /*  main program.                                                         */
@@ -46,6 +46,12 @@ base_small_vector sol_grad(const base_node &x)
 // vectorial velocity field
 base_small_vector vel_vec(const base_node &x)
 { return base_small_vector(1*x[1], 0.2*(x[0])); }
+/////////////////////////////////////////////////////
+//////////////////////////////////////////////////
+////////////////// MAIN //////////////////////////
+/////////////////////////////////////////////////////
+//////////////////////////////////////////////////
+
 int main(int argc, char *argv[]) {
 
 	GMM_SET_EXCEPTION_DEBUG; // Exceptions make a memory fault, to debug.
@@ -63,7 +69,7 @@ int main(int argc, char *argv[]) {
 	size_type N;
 	N = pgt->dim();
 	std::vector<size_type> nsubdiv(N);
-	int NX=10;
+	int NX=4;
 	std::fill(nsubdiv.begin(),nsubdiv.end(),NX);
 	getfem::mesh mesh;        /* the mesh */
 
@@ -116,7 +122,7 @@ getfem::regular_unit_mesh(mesh, nsubdiv, pgt, 0);
 
 	mim.set_integration_method(mesh.convex_index(), ppi);
 	mf_u.set_finite_element(mesh.convex_index(), pf_u);
-	mf_u.set_qdim(bgeot::dim_type(2));
+	mf_u.set_qdim(bgeot::dim_type(2)); //number of variable
 	mf_p.set_finite_element(mesh.convex_index(), pf_p);
 
 	GMM_ASSERT1(pf_u->is_lagrange(), "You are using a non-lagrange FEM. "
@@ -170,7 +176,7 @@ getfem::regular_unit_mesh(mesh, nsubdiv, pgt, 0);
 
 	std::string datafilename="biot.";
         int printstep=10; 
-	for(int istep = 1; istep< 30 ; istep++){
+	for(int istep = 1; istep< 2 ; istep++){
 		TU=assembly(U, P, U_old, P_old,mim,  mf_u, mf_p);
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);
@@ -286,33 +292,61 @@ getfem::base_vector assembly(
 
 
 //solution with CG
-//	gmm::identity_matrix PS;  // optional scalar product
-//	gmm::cg(K, TU, L, PS, PM, iter);
+	gmm::identity_matrix PS;  // optional scalar product
+	gmm::cg(K, TU, L, PS, PM, iter);
 //end solution with CG
 
 
-//////////////////////////////////AMG INTERFACE
-std::cout<<"converting A"<<std::endl;
-gmm::csr_matrix<scalar_type> A_csr;
-gmm::clean(K, 1E-12);
-gmm::copy(K, A_csr);
-std::cout<<"converting X"<<std::endl;
-std::vector<scalar_type> X,  B;
-gmm::resize(X,nbdofu+nbdofp); gmm::clean(X, 1E-12);
-gmm::copy(TU,X);
-std::cout<<"converting B"<<std::endl;
-gmm::resize(B,nbdofu+nbdofp);gmm::clean(B, 1E-12);
-gmm::copy(L,B);
+////////////////////////////////////AMG INTERFACE
+//std::cout<<"converting A"<<std::endl;
+//gmm::csr_matrix<scalar_type> A_csr;
+//gmm::clean(K, 1E-12);
+//gmm::copy(K, A_csr);
+//std::cout<<"converting X"<<std::endl;
+//std::vector<scalar_type> X,  B;
+//gmm::resize(X,nbdofu+nbdofp); gmm::clean(X, 1E-12);
+//gmm::copy(TU,X);
+//std::cout<<"converting B"<<std::endl;
+//gmm::resize(B,nbdofu+nbdofp);gmm::clean(B, 1E-12);
+//gmm::copy(L,B);
 
 
 
-AMG amg(A_csr, X , B);
-gmm::copy(amg.getsol(),TU);
-////////////////////////////////////////////
+//AMG amg(A_csr, X , B);
+//gmm::copy(amg.getsol(),TU);
+//////////////////////////////////////////////
+	getfem::mesh mymesh = mf_u.linked_mesh ();        /* the mesh */
+int * dofpt; dofpt=new int[nbdofu+nbdofp];for (int ia=0; ia< nbdofu+nbdofp ; ia++) dofpt[ia]=-1;
+int pt_counter=0;int lnpt_counter=0;
+    //// List all the convexes
+    dal::bit_vector nn = mymesh.convex_index();
+    bgeot::size_type i;
+    for (i << nn; i != bgeot::size_type(-1); i << nn) {
+	int ndof_el=mf_u.nb_basic_dof_of_element(i) ;
+      std::cout << "Convex of index " << i <<" number of u dof "<<ndof_el << std::endl;
+ 
+     getfem::mesh_fem::ind_dof_ct dof;
+     dof = mf_u.ind_basic_dof_of_element(i);
+     for (int idof=0; idof< ndof_el ; idof+=mf_u.get_qdim())  {
+		 if(dofpt[dof[idof]]==-1){
+			 for (int idim=0; idim< mf_u.get_qdim(); idim++) dofpt[dof[idof+idim]]=pt_counter;
+			 if(idof==0 * mf_u.get_qdim() || idof==2 * mf_u.get_qdim()|| idof==6 * mf_u.get_qdim() || idof==8 * mf_u.get_qdim()){
+			 dofpt[nbdofu+lnpt_counter]=pt_counter;
+			 lnpt_counter++;
+		 }			 
+			 pt_counter++;
+			 }
+
+		 }
+        for (int idof=0; idof< nbdofu+nbdofp; idof++)  std::cout << "final dof pt " << dofpt[idof] << std::endl;
+    }
 
 
-
-
+//std::cout<< "dof u" << mf_u.nb_dof()<<" dof p"<<mf_p.nb_dof()<<std::endl;
+//for (int idof =0; idof<mf_u.nb_dof(); idof++){
+//bgeot::base_node pt = mf_u.point_of_basic_dof(idof);
+//std::cout<< pt[0] << " "  << pt[1]<<std::endl;
+ //}
 	gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 	gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);	
 	return(TU);
