@@ -339,18 +339,6 @@ int pt_counter=0;int lnpt_counter=0;
 
 		 }
         for (int idof=0; idof< nbdofu+nbdofp; idof++)  std::cout << "final dof pt " << dofpt[idof] << std::endl;
-      //bgeot::pconvex_structure cvs = mymesh.structure_of_convex(i);
-      //std::cout << "Number of vertices: " << cvs->nb_points() << std::endl;
-     //std::cout << "Number of faces: " << cvs->nb_faces() << std::endl;
-      //for (bgeot::short_type f = 0; f < cvs->nb_faces(); ++f) {
-      //std::cout << "face " << f << " has " << cvs->nb_points_of_face(f);
-        //std::cout << " vertices with local indexes: ";
-        //for (bgeot::size_type k = 0; k < cvs->nb_points_of_face(f); ++k)
-          //std::cout << cvs->ind_points_of_face(f)[k] << " ";
-        //std::cout << " and global indexes: ";
-        //for (bgeot::size_type k = 0; k < cvs->nb_points_of_face(f); ++k)
-          //std::cout << mymesh.ind_points_of_convex(i)[cvs->ind_points_of_face(f)[k]] << " ";
-      //}
     }
 
 
