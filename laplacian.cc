@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 	size_type N;
 	N = pgt->dim();
 	std::vector<size_type> nsubdiv(N);
-	int NX=4;
+	int NX=8;
 	std::fill(nsubdiv.begin(),nsubdiv.end(),NX);
 	getfem::mesh mesh;        /* the mesh */
 
@@ -175,8 +175,8 @@ getfem::regular_unit_mesh(mesh, nsubdiv, pgt, 0);
 
 
 	std::string datafilename="biot.";
-        int printstep=10; 
-	for(int istep = 1; istep< 2 ; istep++){
+        int printstep=1; 
+	for(int istep = 1; istep< 10 ; istep++){
 		TU=assembly(U, P, U_old, P_old,mim,  mf_u, mf_p);
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);
@@ -217,7 +217,7 @@ getfem::base_vector assembly(
 	gmm::clean(P_old, 1E-10);gmm::clean(U_old, 1E-10);
 	gmm::clean(P, 1E-10);gmm::clean(U, 1E-10);
 	double mu=1.5e+6;
-	double dt=1.e+0;
+	double dt=1.e+1;
 	getfem::base_vector invdt(1); invdt[0] = 1/dt;
 	workspace.add_fixed_size_constant("invdt", invdt);
 //---------------------------------------------------------
@@ -292,29 +292,12 @@ getfem::base_vector assembly(
 
 
 //solution with CG
-	gmm::identity_matrix PS;  // optional scalar product
-	gmm::cg(K, TU, L, PS, PM, iter);
+//	gmm::identity_matrix PS;  // optional scalar product
+//	gmm::cg(K, TU, L, PS, PM, iter);
 //end solution with CG
 
 
-////////////////////////////////////AMG INTERFACE
-//std::cout<<"converting A"<<std::endl;
-//gmm::csr_matrix<scalar_type> A_csr;
-//gmm::clean(K, 1E-12);
-//gmm::copy(K, A_csr);
-//std::cout<<"converting X"<<std::endl;
-//std::vector<scalar_type> X,  B;
-//gmm::resize(X,nbdofu+nbdofp); gmm::clean(X, 1E-12);
-//gmm::copy(TU,X);
-//std::cout<<"converting B"<<std::endl;
-//gmm::resize(B,nbdofu+nbdofp);gmm::clean(B, 1E-12);
-//gmm::copy(L,B);
 
-
-
-//AMG amg(A_csr, X , B);
-//gmm::copy(amg.getsol(),TU);
-//////////////////////////////////////////////
 	getfem::mesh mymesh = mf_u.linked_mesh ();        /* the mesh */
 int * dofpt; dofpt=new int[nbdofu+nbdofp];for (int ia=0; ia< nbdofu+nbdofp ; ia++) dofpt[ia]=-1;
 int pt_counter=0;int lnpt_counter=0;
@@ -323,7 +306,7 @@ int pt_counter=0;int lnpt_counter=0;
     bgeot::size_type i;
     for (i << nn; i != bgeot::size_type(-1); i << nn) {
 	int ndof_el=mf_u.nb_basic_dof_of_element(i) ;
-      std::cout << "Convex of index " << i <<" number of u dof "<<ndof_el << std::endl;
+     // std::cout << "Convex of index " << i <<" number of u dof "<<ndof_el << std::endl;
  
      getfem::mesh_fem::ind_dof_ct dof;
      dof = mf_u.ind_basic_dof_of_element(i);
@@ -338,15 +321,31 @@ int pt_counter=0;int lnpt_counter=0;
 			 }
 
 		 }
-        for (int idof=0; idof< nbdofu+nbdofp; idof++)  std::cout << "final dof pt " << dofpt[idof] << std::endl;
+       
     }
 
 
-//std::cout<< "dof u" << mf_u.nb_dof()<<" dof p"<<mf_p.nb_dof()<<std::endl;
-//for (int idof =0; idof<mf_u.nb_dof(); idof++){
-//bgeot::base_node pt = mf_u.point_of_basic_dof(idof);
-//std::cout<< pt[0] << " "  << pt[1]<<std::endl;
- //}
+////////////////////////////////////AMG INTERFACE
+std::cout<<"converting A"<<std::endl;
+gmm::csr_matrix<scalar_type> A_csr;
+gmm::clean(K, 1E-12);
+gmm::copy(K, A_csr);
+std::cout<<"converting X"<<std::endl;
+std::vector<scalar_type> X,  B;
+gmm::resize(X,nbdofu+nbdofp); gmm::clean(X, 1E-12);
+gmm::copy(TU,X);
+std::cout<<"converting B"<<std::endl;
+gmm::resize(B,nbdofu+nbdofp);gmm::clean(B, 1E-12);
+gmm::copy(L,B);
+
+AMG amg("Biot");
+amg.set_pt2uk(dofpt , nbdofu, nbdofp, pt_counter);
+amg.solve(A_csr, X , B);
+gmm::copy(amg.getsol(),TU);
+//////////////////////////////////////////////
+
+
+
 	gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 	gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);	
 	return(TU);

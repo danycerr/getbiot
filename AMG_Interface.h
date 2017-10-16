@@ -18,11 +18,22 @@ using bgeot::scalar_type;
 
 class AMG {
   private:
-std::vector<scalar_type> sol_vec;
-
-
+std::vector<scalar_type> sol_vec; /// solution vector
+std::vector<int> _pt2uk; /// point to oknow vector
+int _q_dof;              /// quadratic dof
+int _l_dof;				/// linear dof
+int _npts;
   public:
-  AMG(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B );
+  // ======== costructor the class ========================
+  AMG(std::string name);
+    // ======== destructor the class ========================
+  ~AMG();  // This is the destructor: declaration
+    // ======== solver of the class ========================
+  void solve(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B );
+  // =========== set to point to uknown vector ========================
+  void set_pt2uk(int * dofpt , int q_dof, int l_dof, int npts);
+  
+    // =========== return the solution ========================
   std::vector<scalar_type> getsol(){return sol_vec;}
 };
 

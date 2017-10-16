@@ -1,6 +1,20 @@
 #include "AMG_Interface.h" 
 #include <memory>
-AMG::AMG(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B)
+
+AMG::AMG(std::string name)
+{
+std::cout<<"Build class AMG for "<< name << std::endl;
+
+}
+
+
+AMG::~AMG(void) {
+// delete [] 
+   std::cout << "AMG deleted" << std::endl;
+   
+}
+
+void AMG::solve(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B)
 {
 	std::cout<<"Start building the matrix"<<std::endl; 
 	std::cout<<"*** parameters SAMG matrix   "<<A_csr.nrows()<<std::endl;	
@@ -59,29 +73,29 @@ AMG::AMG(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::ve
 
 
 APPL_INT npnt,nsys,matrix;
-				matrix=22; nsys=3;npnt=0;
-				APPL_INT ndiu      = 1;        // dimension of (dummy) vector iu
-				APPL_INT ncyc;
+matrix=22; nsys=3;npnt= _q_dof + _l_dof;
+APPL_INT ndiu      = 1;        // dimension of (dummy) vector iu
+APPL_INT ncyc;
 
-				float told,tnew,tamg;
+float told,tnew,tamg;
 
-				//SAMG configuration
-				//i
+//SAMG configuration
+//i
 
-				 APPL_INT * iu;
-			if (nsys==1) iu= new APPL_INT[1];
-			else {
- 			iu  = new APPL_INT[nnu];
- 			ndiu   = nnu;
-			 for(int iiu=0;iiu<nnu;iiu++){
-				//only working for nsys = 2 check it out for larger systems				 
-				if(iiu < 882){
-				 iu[iiu]=((iiu< 441)? 1:2);
-				//iu[iiu]=1;
+APPL_INT * iu;
+if (nsys==1) iu= new APPL_INT[1];
+else {
+iu  = new APPL_INT[nnu];
+ndiu   = nnu;
+for(int iiu=0;iiu<nnu;iiu++){
+//only working for nsys = 2 check it out for larger systems				 
+if(iiu < _q_dof ){
+iu[iiu]=((iiu%2==0)? 1:2);
+//iu[iiu]=1;
 }
-				else iu[iiu]=3;
-				}//end for iiu
-			}
+else iu[iiu]=3;
+}//end for iiu
+}
 				
 			//=====================================================
 			/// printing format
@@ -118,7 +132,7 @@ APPL_INT npnt,nsys,matrix;
 
 
 
-//#ifdef DIRECT_SOLVER	
+#ifdef DIRECT_SOLVER	
 	
 			int levelx;
 			SAMG_GET_LEVELX(&levelx); // retreive levelx=number of maximum coarsening levels 
@@ -138,7 +152,7 @@ APPL_INT npnt,nsys,matrix;
 			
 			ncyc      = 11050;    // V-cycle as pre-conditioner for CG; at most 50 iterations
 
-// #endif //direct_solver
+ #endif //direct_solver
 
 
 
@@ -153,18 +167,23 @@ APPL_INT npnt,nsys,matrix;
 
 
 #ifdef AMG_ACCELERATED
-
-			ncyc      = 11050;    // V-cycle as pre-conditioner for CG; at most 50 iterations	
-			
+ncyc      = 11050;    // V-cycle as pre-conditioner for CG; at most 50 iterations	
 #endif //amg_accelerated
-
+			int  nrc=4;int  nrc_emergency=4;
+			  SAMG_SET_NRC(&nrc);// change  nrc=solver for coarser levels page 67 user guide
+			SAMG_SET_NRC_EMERGENCY(&nrc_emergency);
 ncyc      = 11050;   
 
 				APPL_INT ndip      = 1;        // dimension of (dummy) vector ip
 				// APPL_INT * iscale = new APPL_INT[1];
 				// this vector (iscale) indicates which uknowns require scaling if 0 no scaling
 				APPL_INT * iscale = new APPL_INT[nsys]; for(int i_sys=0; i_sys<nsys; i_sys++) iscale[i_sys]=0; 
-				APPL_INT * ip     = new APPL_INT[1];
+				
+				// APPL_INT * ip     = new APPL_INT[1];
+				
+				  APPL_INT * ip     = new APPL_INT[npnt];
+				 for (int ipt=0; ipt< npnt;  ipt++) ip[ipt] =  _pt2uk[ipt];
+				
 				APPL_INT nsolve    = 2;        // results in scalar approach (current system is scalar)
 				APPL_INT ifirst    = 1;        // first approximation = zero
 				double  eps       = 1.0e-12;   // required (relative) residual reduction
@@ -234,14 +253,27 @@ std::cout << std::endl<<"*** time to solve the system using SAMG with gmm time: 
 
 gmm::resize(sol_vec,nnu);
 for(int i = 0 ; i < nnu ; i++ ){sol_vec[i]=u_samg[i];}
-
-
-
-
-
-
-
-
-
+return;
 }
+//===============================================================
+//===============================================================
+//===============================================================
+//===============================================================
 
+
+ void AMG::set_pt2uk(int * dofpt , int q_dof, int l_dof, int npts){
+	 
+	 std::cout << std::string(100, '=') << std::endl;
+	 std::cout<< "AMG::set_pt2uk start"  << std::endl;
+	 std::cout << std::string(100, '=') << std::endl;
+	 
+	 
+	  _q_dof=q_dof; _l_dof=l_dof; _npts=npts;
+	 _pt2uk.resize(_q_dof + l_dof);
+	  for (int idof=0; idof< q_dof+l_dof; idof++)  _pt2uk[idof] = dofpt[idof] ;
+	 
+	 
+	 std::cout << std::string(100, '=') << std::endl;
+	 std::cout<< "AMG::set_pt2uk end "  << std::endl;
+	 std::cout << std::string(100, '=') << std::endl;
+	 }
