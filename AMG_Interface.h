@@ -29,7 +29,7 @@ int _npts;
     // ======== destructor the class ========================
   ~AMG();  // This is the destructor: declaration
     // ======== solver of the class ========================
-  void solve(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B );
+  void solve(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B, int solver_type );
   // =========== set to point to uknown vector ========================
   void set_pt2uk(int * dofpt , int q_dof, int l_dof, int npts);
   

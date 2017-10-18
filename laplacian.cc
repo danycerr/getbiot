@@ -27,6 +27,7 @@ typedef std::vector<scalar_type> plain_vector;
 enum { DIRICHLET_BOUNDARY_NUM = 0, NEUMANN_BOUNDARY_NUM = 1, INNER_FACES = 2};
 enum { DIRICHLET_WITH_MULTIPLIERS = 0, DIRICHLET_WITH_PENALIZATION = 1};
 enum { BOTTOM = 2, TOP = 1 , LEFT = 3, RIGHT =4};
+enum {  CLASSIC = 1, DIRECT = 2 };
 getfem::base_vector assembly(getfem::base_vector U,
 		getfem::base_vector P,
 		getfem::base_vector U_old,
@@ -176,7 +177,7 @@ getfem::regular_unit_mesh(mesh, nsubdiv, pgt, 0);
 
 	std::string datafilename="biot.";
         int printstep=1; 
-	for(int istep = 1; istep< 10 ; istep++){
+	for(int istep = 1; istep< 200 ; istep++){
 		TU=assembly(U, P, U_old, P_old,mim,  mf_u, mf_p);
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(0,nbdofu)),U);	
 		gmm::copy(gmm::sub_vector(TU,gmm::sub_interval(nbdofu, nbdofp)),P);
@@ -216,22 +217,28 @@ getfem::base_vector assembly(
 	gmm::copy(U,U_old);gmm::copy(P,P_old);	
 	gmm::clean(P_old, 1E-10);gmm::clean(U_old, 1E-10);
 	gmm::clean(P, 1E-10);gmm::clean(U, 1E-10);
-	double mu=1.5e+6;
-	double dt=1.e+1;
+	double E=5.5e+9;double poisson =0.3;
+	double mu_s = E/( 2 * ( 1 + poisson) ) ;
+	double lambda_l= E*poisson/ ( ( 1+poisson ) * (1 - 2 * poisson)) ;
+	double biot_modulus=1.e+9;
+	double dt=1.e+2;
 	getfem::base_vector invdt(1); invdt[0] = 1/dt;
 	workspace.add_fixed_size_constant("invdt", invdt);
 //---------------------------------------------------------
-	getfem::base_vector vmu(1); vmu[0] = mu;
+	getfem::base_vector vmu(1); vmu[0] = mu_s;
 	workspace.add_fixed_size_constant("mu", vmu);
 //---------------------------------------------------------
-	double poisson =0.2;
-	getfem::base_vector lambda(1); lambda[0] = (2 * mu * poisson)/(1 - 2 * poisson) ;
+	getfem::base_vector bm(1); bm[0] = biot_modulus;
+	workspace.add_fixed_size_constant("bm", bm);
+//---------------------------------------------------------
+
+	getfem::base_vector lambda(1); lambda[0] = lambda_l ;
 	workspace.add_fixed_size_constant("lambda", lambda);
 //---------------------------------------------------------
 	getfem::base_vector alpha(1); alpha[0] = 0.5;
 	workspace.add_fixed_size_constant("alpha", alpha);
 //---------------------------------------------------------
-	getfem::base_vector permeability(1); permeability[0] = 1.e-3;
+	getfem::base_vector permeability(1); permeability[0] = 1.e-13;
 	workspace.add_fixed_size_constant("permeability", permeability);
 //---------------------------------------------------------
 	getfem::base_vector force(1); force[0] = 1.e+6;
@@ -241,9 +248,9 @@ getfem::base_vector assembly(
 	workspace.add_fem_variable("p", mf_p, gmm::sub_interval(nbdofu, nbdofp), P);
 	workspace.add_fem_variable("u_old", mf_u, gmm::sub_interval(0, nbdofu), U_old);
 	workspace.add_fem_variable("p_old", mf_p, gmm::sub_interval(nbdofu,nbdofp), P_old);
-	workspace.add_expression("2*mu*Sym(Grad_u):Grad_Test_u"
-			"+ alpha*p*Trace(Grad_Test_u) + invdt*alpha*Test_p*Trace(Sym(Grad_u))"
-			"+invdt*p.Test_p + permeability*Grad_p.Grad_Test_p + lambda*Div_u*Div_Test_u"
+	workspace.add_expression("2*mu*Sym(Grad_u):Grad_Test_u + lambda*Div_u*Div_Test_u"
+			"- alpha*p*Trace(Grad_Test_u) "
+			"+invdt*p.Test_p + bm*permeability*Grad_p.Grad_Test_p + bm*invdt*alpha*Test_p*Trace(Sym(Grad_u))"
 			, mim);
 	getfem::model_real_sparse_matrix K(nbdofu+nbdofp, nbdofu+nbdofp);
 	workspace.set_assembled_matrix(K);
@@ -251,7 +258,7 @@ getfem::base_vector assembly(
 	workspace.clear_expressions();
 
 	//======= RHS =====================
-	workspace.add_expression("[0,-0].Test_u +[+0.0].Test_p + invdt*p_old.Test_p + invdt*alpha*Test_p*Trace(Sym(Grad_u_old))", mim);
+	workspace.add_expression("[0,-0].Test_u +[+0.0].Test_p + invdt*p_old.Test_p + bm*invdt*alpha*Test_p*Trace(Sym(Grad_u_old))", mim);
 	getfem::base_vector L(nbdofu+nbdofp);
 	workspace.set_assembled_vector(L);
 	workspace.assembly(1);
@@ -280,21 +287,7 @@ getfem::base_vector assembly(
 	gmm::copy(U, gmm::sub_vector(TU,gmm::sub_interval(0, nbdofu)));				
 	gmm::copy(P, gmm::sub_vector(TU,gmm::sub_interval(nbdofu,nbdofp)));	
 	//===================================================================
-	size_type restart = 50;
-	gmm::identity_matrix PM; // no precond
-	gmm::iteration iter(1.e-12);  // iteration object with the max residu
-	iter.set_noisy(1);               // output of iterations (2: sub-iteration)
-	iter.set_maxiter(2000); // maximum number of iterations
-	//gmm::gmres(K, TU, L, PM, restart, iter);
 
-	
-
-
-
-//solution with CG
-//	gmm::identity_matrix PS;  // optional scalar product
-//	gmm::cg(K, TU, L, PS, PM, iter);
-//end solution with CG
 
 
 
@@ -324,8 +317,22 @@ int pt_counter=0;int lnpt_counter=0;
        
     }
 
+	size_type restart = 50;
+	gmm::identity_matrix PM; // no precond
+	gmm::iteration iter(1.e-12);  // iteration object with the max residu
+	iter.set_noisy(1);               // output of iterations (2: sub-iteration)
+	iter.set_maxiter(2000); // maximum number of iterations
+	//gmm::gmres(K, TU, L, PM, restart, iter);
 
-////////////////////////////////////AMG INTERFACE
+	
+
+
+
+//solution with CG
+//	gmm::identity_matrix PS;  // optional scalar product
+//	gmm::cg(K, TU, L, PS, PM, iter);
+//end solution with CG
+//////////////////////////////////////AMG INTERFACE
 std::cout<<"converting A"<<std::endl;
 gmm::csr_matrix<scalar_type> A_csr;
 gmm::clean(K, 1E-12);
@@ -340,9 +347,9 @@ gmm::copy(L,B);
 
 AMG amg("Biot");
 amg.set_pt2uk(dofpt , nbdofu, nbdofp, pt_counter);
-amg.solve(A_csr, X , B);
+amg.solve(A_csr, X , B , CLASSIC);
 gmm::copy(amg.getsol(),TU);
-//////////////////////////////////////////////
+////////////////////////////////////////////////
 
 
 

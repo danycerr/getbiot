@@ -14,7 +14,7 @@ AMG::~AMG(void) {
    
 }
 
-void AMG::solve(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B)
+void AMG::solve(gmm::csr_matrix<scalar_type> A_csr, std::vector<scalar_type> U, std::vector<scalar_type> B, int solver_type)
 {
 	std::cout<<"Start building the matrix"<<std::endl; 
 	std::cout<<"*** parameters SAMG matrix   "<<A_csr.nrows()<<std::endl;	
@@ -76,7 +76,7 @@ APPL_INT npnt,nsys,matrix;
 matrix=22; nsys=3;npnt= _q_dof + _l_dof;
 APPL_INT ndiu      = 1;        // dimension of (dummy) vector iu
 APPL_INT ncyc;
-
+				APPL_INT ndip      = npnt;        // dimension of (dummy) vector ip
 float told,tnew,tamg;
 
 //SAMG configuration
@@ -132,7 +132,7 @@ else iu[iiu]=3;
 
 
 
-#ifdef DIRECT_SOLVER	
+			if (solver_type==2){	
 	
 			int levelx;
 			SAMG_GET_LEVELX(&levelx); // retreive levelx=number of maximum coarsening levels 
@@ -152,7 +152,7 @@ else iu[iiu]=3;
 			
 			ncyc      = 11050;    // V-cycle as pre-conditioner for CG; at most 50 iterations
 
- #endif //direct_solver
+} //direct_solver
 
 
 
@@ -169,21 +169,27 @@ else iu[iiu]=3;
 #ifdef AMG_ACCELERATED
 ncyc      = 11050;    // V-cycle as pre-conditioner for CG; at most 50 iterations	
 #endif //amg_accelerated
+			
+			if (solver_type==1){
+			//int levelx=2;
+			// SAMG_SET_LEVELX(&levelx);// change levelx=number of maximum coarsening levels 
+			
 			int  nrc=4;int  nrc_emergency=4;
-			  SAMG_SET_NRC(&nrc);// change  nrc=solver for coarser levels page 67 user guide
+			SAMG_SET_NRC(&nrc);// change  nrc=solver for coarser levels page 67 user guide
 			SAMG_SET_NRC_EMERGENCY(&nrc_emergency);
-ncyc      = 11050;   
+            ncyc      = 330500;   
+}
 
-				APPL_INT ndip      = 1;        // dimension of (dummy) vector ip
 				// APPL_INT * iscale = new APPL_INT[1];
 				// this vector (iscale) indicates which uknowns require scaling if 0 no scaling
 				APPL_INT * iscale = new APPL_INT[nsys]; for(int i_sys=0; i_sys<nsys; i_sys++) iscale[i_sys]=0; 
 				
-				// APPL_INT * ip     = new APPL_INT[1];
+				//  APPL_INT * ip     = new APPL_INT[1];
 				
 				  APPL_INT * ip     = new APPL_INT[npnt];
-				 for (int ipt=0; ipt< npnt;  ipt++) ip[ipt] =  _pt2uk[ipt];
-				
+				  for (int ipt=0; ipt< npnt;  ipt++) {ip[ipt] =  _pt2uk[ipt];}
+				// nsolve = napproach nxtyp internal 
+ 
 				APPL_INT nsolve    = 2;        // results in scalar approach (current system is scalar)
 				APPL_INT ifirst    = 1;        // first approximation = zero
 				double  eps       = 1.0e-12;   // required (relative) residual reduction
